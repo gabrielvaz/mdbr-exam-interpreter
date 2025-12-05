@@ -6,7 +6,6 @@ import { LoadingAnimated } from "@/app/components/loading-animated";
 import { TabsResults } from "@/app/components/tabs-results";
 import { AnalysisResult } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
@@ -35,12 +34,18 @@ export default function Home() {
 
       const data = await res.json();
       setResult(data);
-    } catch (err: any) {
+      // Note: We do NOT set loading(false) here. 
+      // We wait for the LoadingAnimated component to call onComplete.
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "Ocorreu um erro ao processar seu exame. Por favor, tente novamente.");
-    } finally {
-      setLoading(false);
+      const errorMessage = err instanceof Error ? err.message : "Ocorreu um erro ao processar seu exame. Por favor, tente novamente.";
+      setError(errorMessage);
+      setLoading(false); // Stop loading on error immediately
     }
+  };
+
+  const onAnimationComplete = () => {
+    setLoading(false);
   };
 
   const reset = () => {
@@ -73,7 +78,12 @@ export default function Home() {
           </div>
         )}
 
-        {loading && <LoadingAnimated />}
+        {loading && (
+          <LoadingAnimated
+            isFinished={!!result}
+            onComplete={onAnimationComplete}
+          />
+        )}
 
         {error && (
           <div className="text-center space-y-4 text-destructive animate-in fade-in bg-destructive/10 p-6 rounded-lg border border-destructive/20">
@@ -84,14 +94,9 @@ export default function Home() {
           </div>
         )}
 
-        {result && (
+        {!loading && result && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-            <div className="flex justify-end">
-              <Button variant="ghost" onClick={reset} className="text-muted-foreground hover:text-foreground">
-                <RefreshCcw className="w-4 h-4 mr-2" /> Nova Análise
-              </Button>
-            </div>
-            <TabsResults data={result} />
+            <TabsResults result={result} onReset={reset} />
           </div>
         )}
       </div>

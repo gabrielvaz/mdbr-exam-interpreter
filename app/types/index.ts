@@ -1,49 +1,42 @@
 export interface BioimpedanceData {
-  weight: number | null;
-  height: number | null;
-  age: number | null;
-  gender: string | null;
-  muscleMass: number | null;
-  leanMass: number | null;
-  visceralFat: number | null;
-  bodyFatPercentage: number | null;
-  fatMass: number | null;
-  bodyWater: number | null;
-  bmi: number | null;
-  score: number | null;
-  waistHipRatio: number | null;
-  segmentalMass: {
-    leftArm: number | null;
-    rightArm: number | null;
-    leftLeg: number | null;
-    rightLeg: number | null;
-    trunk: number | null;
-  };
-  segmentalFat: {
-    leftArm: number | null;
-    rightArm: number | null;
-    leftLeg: number | null;
-    rightLeg: number | null;
-    trunk: number | null;
-  };
-  history: Array<{
-    date: string;
-    weight: number;
-    muscleMass: number;
-    bodyFatPercentage: number;
-  }>;
+    patientInfo?: {
+        name?: string;
+        age?: string;
+        gender?: string;
+        height?: string;
+        weight?: string;
+        cpf?: string;
+        birthDate?: string;
+    };
+    weight: { value: number | null; unit: string; status: string };
+    bmi: { value: number | null; unit: string; status: string };
+    bodyFat: { value: number | null; unit: string; status: string };
+    muscleMass: { value: number | null; unit: string; status: string };
+    bodyWater: { value: number | null; unit: string; status: string };
+    visceralFat: { value: number | null; unit: string; status: string };
+    boneMass: { value: number | null; unit: string; status: string };
+    bmr: { value: number | null; unit: string; status: string };
+    metabolicAge: { value: number | null; unit: string; status: string };
+    score: { value: number | null; unit: string; status: string };
+    history: {
+        date: string;
+        weight: number | null;
+        bodyFat: number | null;
+        muscleMass: number | null;
+        score: number | null;
+    }[];
+    recommendations?: {
+        diet?: string;
+        exercise?: string;
+        hydration?: string;
+        sleep?: string;
+        professional?: string;
+        procedures?: string;
+    };
 }
 
 export interface AnalysisResult {
-  structuredData: BioimpedanceData;
-  technicalAnalysis: string;
-  patientAnalysis: string;
-  tips: {
-    bmi: string;
-    bodyFat: string;
-    muscleMass: string;
-    bodyWater: string;
-    visceralFat: string;
-    score: string;
-  };
+    structured: BioimpedanceData;
+    explanation: string;
+    rawJson: Record<string, unknown>;
 }

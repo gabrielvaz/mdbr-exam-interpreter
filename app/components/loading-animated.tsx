@@ -1,90 +1,84 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Progress } from "@/components/ui/progress";
+import { Loader2 } from "lucide-react";
+
+interface LoadingAnimatedProps {
+    onComplete?: () => void;
+    isFinished?: boolean;
+}
 
 const PHRASES = [
     "Lendo seu exame...",
-    "Identificando marcadores corporais...",
-    "Extraindo dados numéricos...",
-    "Calculando IMC e composição corporal...",
-    "Comparando com médias da população brasileira...",
-    "Analisando histórico e tendências...",
-    "Gerando insights de saúde personalizados...",
-    "Verificando consistência dos dados...",
-    "Formatando seu relatório detalhado...",
-    "Quase pronto, finalizando análise..."
+    "Identificando métricas...",
+    "Analisando composição corporal...",
+    "Comparando com dados da população brasileira...",
+    "Gerando recomendações personalizadas...",
+    "Finalizando análise...",
 ];
 
-export function LoadingAnimated() {
-    const [phraseIndex, setPhraseIndex] = useState(0);
+export function LoadingAnimated({ onComplete, isFinished }: LoadingAnimatedProps) {
     const [progress, setProgress] = useState(0);
+    const [phraseIndex, setPhraseIndex] = useState(0);
 
     useEffect(() => {
-        // Rotate phrases
+        // Phrase rotation
         const phraseInterval = setInterval(() => {
             setPhraseIndex((prev) => (prev + 1) % PHRASES.length);
         }, 3000);
 
-        // Asymptotic progress bar
-        const progressInterval = setInterval(() => {
-            setProgress((prev) => {
-                if (prev >= 95) return 95; // Stall at 95%
-                // Slow down as we get closer to 90%
-                const increment = prev < 50 ? 2 : prev < 80 ? 1 : 0.2;
-                return Math.min(prev + increment, 95);
-            });
-        }, 100);
-
-        return () => {
-            clearInterval(phraseInterval);
-            clearInterval(progressInterval);
-        };
+        return () => clearInterval(phraseInterval);
     }, []);
 
+    useEffect(() => {
+        let progressInterval: NodeJS.Timeout | undefined;
+        let completeTimer: NodeJS.Timeout | undefined;
+
+        if (isFinished) {
+            // If finished, wait a bit then call onComplete
+            completeTimer = setTimeout(() => {
+                if (onComplete) onComplete();
+            }, 500);
+        } else {
+            // Asymptotic progress up to 95%
+            progressInterval = setInterval(() => {
+                setProgress((prev) => {
+                    if (prev >= 95) return 95; // Stall at 95%
+                    // Slower increment as it gets higher
+                    const remaining = 95 - prev;
+                    const increment = Math.max(0.1, remaining * 0.05);
+                    return prev + increment;
+                });
+            }, 200);
+        }
+
+        return () => {
+            if (progressInterval) clearInterval(progressInterval);
+            if (completeTimer) clearTimeout(completeTimer);
+        };
+    }, [isFinished, onComplete]);
+
     return (
-        <div className="flex flex-col items-center justify-center py-12 space-y-8 w-full max-w-md mx-auto">
-            <div className="relative w-24 h-24">
-                <motion.div
-                    className="absolute inset-0 border-4 border-primary/30 rounded-full"
-                    animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                />
-                <motion.div
-                    className="absolute inset-0 border-t-4 border-primary rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-primary">
-                    {Math.round(progress)}%
+        <div className="flex flex-col items-center justify-center space-y-8 py-12 animate-in fade-in duration-500">
+            <div className="relative">
+                <div className="absolute inset-0 bg-slate-200 blur-xl rounded-full animate-pulse" />
+                <div className="relative bg-white p-4 rounded-full shadow-lg border border-slate-100">
+                    <Loader2 className="w-12 h-12 text-slate-900 animate-spin" />
                 </div>
             </div>
 
-            <div className="h-12 overflow-hidden relative w-full text-center">
-                <motion.div
-                    key={phraseIndex}
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="text-lg font-medium text-primary px-4"
-                >
+            <div className="w-full max-w-md space-y-2 text-center">
+                <h3 className="text-lg font-medium text-slate-700 h-8 transition-all duration-300">
                     {PHRASES[phraseIndex]}
-                </motion.div>
-            </div>
+                </h3>
 
-            <div className="w-full space-y-2">
-                <div className="h-2 bg-muted rounded-full overflow-hidden w-full">
-                    <motion.div
-                        className="h-full bg-primary"
-                        initial={{ width: "0%" }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.1 }}
-                    />
+                <div className="space-y-1">
+                    <Progress value={isFinished ? 100 : progress} className="h-2 w-full bg-slate-100" />
+                    <p className="text-xs text-slate-400 text-right font-mono">
+                        {Math.round(isFinished ? 100 : progress)}%
+                    </p>
                 </div>
-                <p className="text-xs text-muted-foreground text-center">
-                    Isso pode levar alguns segundos dependendo da complexidade do exame.
-                </p>
             </div>
         </div>
     );
