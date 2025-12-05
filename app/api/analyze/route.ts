@@ -96,6 +96,13 @@ Siga estritamente as instruções abaixo:
 }
 `;
 
+const MODELS = [
+    "google/gemini-2.0-pro-exp-02-05:free", // "3.40 pro" equivalent / High-end experimental
+    "google/gemini-2.5-pro",
+    "google/gemini-2.5-flash",
+    "google/gemini-2.0-flash-001" // Stable fallback
+];
+
 export async function POST(req: NextRequest) {
     try {
         const formData = await req.formData();
@@ -126,61 +133,91 @@ export async function POST(req: NextRequest) {
             };
         }
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-                "Content-Type": "application/json",
-                "HTTP-Referer": "https://mdbr-exam-interpreter.vercel.app",
-                "X-Title": "Bioimpedance Interpreter",
-            },
-            body: JSON.stringify({
-                model: "google/gemini-2.5-pro",
-                messages: [
-                    {
-                        role: "system",
-                        content: SYSTEM_PROMPT
+        let lastError = null;
+        let successfulModel = null;
+        let finalData = null;
+
+        // Helper to clean JSON
+        const cleanJson = (text: string) => {
+            return text.replace(/```json\n?|```/g, '').trim();
+        };
+
+        for (const model of MODELS) {
+            console.log(`Attempting analysis with model: ${model}`);
+            try {
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "https://mdbr-exam-interpreter.vercel.app",
+                        "X-Title": "Bioimpedance Interpreter",
                     },
-                    {
-                        role: "user",
-                        content: [
+                    body: JSON.stringify({
+                        model: model,
+                        messages: [
                             {
-                                type: "text",
-                                text: "Analise este exame de bioimpedância e extraia os dados conforme solicitado. Responda APENAS com o JSON."
+                                role: "system",
+                                content: SYSTEM_PROMPT
                             },
-                            contentPart
+                            {
+                                role: "user",
+                                content: [
+                                    {
+                                        type: "text",
+                                        text: "Analise este exame de bioimpedância e extraia os dados conforme solicitado. Responda APENAS com o JSON."
+                                    },
+                                    contentPart
+                                ]
+                            }
                         ]
-                    }
-                ]
-            })
-        });
+                    })
+                });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("OpenRouter API Error:", errorText);
-            return NextResponse.json({ error: `OpenRouter API Error: ${response.statusText}` }, { status: response.status });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.warn(`Model ${model} failed with status ${response.status}: ${errorText}`);
+                    lastError = { status: response.status, message: errorText };
+                    continue; // Try next model
+                }
+
+                const data = await response.json();
+
+                if (!data.choices || data.choices.length === 0) {
+                    console.warn(`Model ${model} returned no choices.`);
+                    lastError = { status: 500, message: "No response from AI" };
+                    continue;
+                }
+
+                const content = data.choices[0].message.content;
+
+                try {
+                    finalData = JSON.parse(cleanJson(content));
+                    successfulModel = model;
+                    break; // Success! Exit loop
+                } catch (e) {
+                    console.error(`JSON Parse Error for model ${model}:`, e);
+                    lastError = { status: 500, message: "Failed to parse AI response as JSON" };
+                    continue;
+                }
+
+            } catch (error: any) {
+                console.error(`Network/Server error with model ${model}:`, error);
+                lastError = { status: 500, message: error.message || "Internal Error" };
+                continue;
+            }
         }
 
-        const data = await response.json();
-
-        if (!data.choices || data.choices.length === 0) {
-            return NextResponse.json({ error: "No response from AI" }, { status: 500 });
+        if (finalData) {
+            console.log(`Successfully analyzed using model: ${successfulModel}`);
+            return NextResponse.json({ ...finalData, _usedModel: successfulModel });
         }
 
-        const content = data.choices[0].message.content;
-
-        try {
-            // Helper to clean JSON
-            const cleanJson = (text: string) => {
-                return text.replace(/```json\n?|```/g, '').trim();
-            };
-
-            const jsonContent = JSON.parse(cleanJson(content));
-            return NextResponse.json(jsonContent);
-        } catch (e) {
-            console.error("JSON Parse Error:", e);
-            return NextResponse.json({ error: "Failed to parse AI response as JSON", raw: content }, { status: 500 });
-        }
+        console.error("All models failed. Last error:", lastError);
+        return NextResponse.json(
+            { error: `All models failed. Last error: ${lastError?.message || "Unknown error"}` },
+            { status: lastError?.status || 500 }
+        );
 
     } catch (error) {
         console.error("Server Error:", error);
