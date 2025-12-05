@@ -43,7 +43,6 @@ export function Uploader({ onUpload, isLoading }: UploaderProps) {
 
     const handleFile = (file: File) => {
         setSelectedFile(file);
-        onUpload(file);
     };
 
     const clearFile = () => {
@@ -77,25 +76,44 @@ export function Uploader({ onUpload, isLoading }: UploaderProps) {
                 />
 
                 {selectedFile ? (
-                    <div className="flex flex-col items-center p-4 space-y-2 animate-in zoom-in-50 duration-300">
-                        {selectedFile.type.startsWith("image/") ? (
-                            <ImageIcon className="w-12 h-12 text-primary" />
-                        ) : (
-                            <FileText className="w-12 h-12 text-primary" />
-                        )}
-                        <p className="text-sm font-medium text-center break-all max-w-xs">
-                            {selectedFile.name}
-                        </p>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                clearFile();
-                            }}
-                        >
-                            <X className="w-4 h-4 mr-2" /> Remover
-                        </Button>
+                    <div className="flex flex-col items-center p-6 space-y-4 animate-in zoom-in-50 duration-300 w-full">
+                        <div className="flex flex-col items-center space-y-2">
+                            {selectedFile.type.startsWith("image/") ? (
+                                <ImageIcon className="w-12 h-12 text-primary/80" />
+                            ) : (
+                                <FileText className="w-12 h-12 text-primary/80" />
+                            )}
+                            <div className="text-center">
+                                <p className="text-sm font-medium text-slate-900 break-all max-w-xs">
+                                    {selectedFile.name}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                    {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col w-full max-w-xs gap-3">
+                            <Button
+                                onClick={() => onUpload(selectedFile)}
+                                className="w-full font-semibold shadow-lg shadow-primary/20"
+                                size="lg"
+                            >
+                                Analisar Exame
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearFile();
+                                }}
+                                className="text-slate-500 hover:text-destructive hover:bg-destructive/10"
+                            >
+                                <X className="w-4 h-4 mr-2" /> Escolher outro arquivo
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center p-4">
