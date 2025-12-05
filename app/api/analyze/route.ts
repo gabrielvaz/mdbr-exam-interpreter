@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
                 "X-Title": "Bioimpedance Interpreter",
             },
             body: JSON.stringify({
-                model: "google/gemini-2.5-flash",
+                model: "google/gemini-2.0-flash-001",
                 messages: [
                     {
                         role: "system",
@@ -170,7 +170,12 @@ export async function POST(req: NextRequest) {
         const content = data.choices[0].message.content;
 
         try {
-            const jsonContent = JSON.parse(content);
+            // Helper to clean JSON
+            const cleanJson = (text: string) => {
+                return text.replace(/```json\n?|```/g, '').trim();
+            };
+
+            const jsonContent = JSON.parse(cleanJson(content));
             return NextResponse.json(jsonContent);
         } catch (e) {
             console.error("JSON Parse Error:", e);
