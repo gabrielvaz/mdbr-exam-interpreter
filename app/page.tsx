@@ -4,9 +4,9 @@ import { useState } from "react";
 import { Uploader } from "@/app/components/uploader";
 import { LoadingAnimated } from "@/app/components/loading-animated";
 import { TabsResults } from "@/app/components/tabs-results";
+import { HowItWorks } from "@/app/components/how-it-works";
 import { AnalysisResult } from "@/app/types";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -58,20 +58,20 @@ export default function Home() {
     <main className="min-h-screen bg-background p-4 md:p-8 flex flex-col items-center">
       <div className="w-full max-w-4xl space-y-8">
         <div className="text-center space-y-4 pt-8">
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
             Bioimpedância AI
           </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-slate-500 max-w-2xl mx-auto">
             Interpretação inteligente e detalhada do seu exame corporal.
           </p>
         </div>
 
         {!result && !loading && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <CardMetricSection />
+            <HowItWorks />
             <Uploader onUpload={handleUpload} isLoading={loading} />
 
-            <div className="text-center text-sm text-muted-foreground space-y-1">
+            <div className="text-center text-sm text-slate-400 space-y-1">
               <p>Suportamos PDF, JPG, PNG e fotos de celular.</p>
               <p>Seus dados são processados em tempo real e não são salvos.</p>
             </div>
@@ -102,14 +102,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
-
-function CardMetricSection() {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 opacity-50 pointer-events-none blur-[1px] select-none" aria-hidden="true">
-      <Skeleton className="h-24 rounded-lg" />
-      <Skeleton className="h-24 rounded-lg" />
-      <Skeleton className="h-24 rounded-lg" />
-    </div>
-  )
 }
