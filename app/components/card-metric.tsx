@@ -3,7 +3,7 @@ import { ReactNode } from "react";
 
 interface CardMetricProps {
     title: string;
-    value: number | null;
+    value: string | number | null;
     unit: string;
     description: string;
     icon?: ReactNode;

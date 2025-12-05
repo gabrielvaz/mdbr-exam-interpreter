@@ -4,6 +4,7 @@ import { AnalysisResult } from "@/app/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CardMetric } from "./card-metric";
 import { ChartsSection } from "./charts-section";
 import {
@@ -19,7 +20,9 @@ import {
     Bone,
     Flame,
     Clock,
-    Lightbulb
+    Lightbulb,
+    Info,
+    AlertCircle
 } from "lucide-react";
 import { useState } from "react";
 
@@ -32,7 +35,7 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
     const [copiedText, setCopiedText] = useState(false);
     const [activeTab, setActiveTab] = useState("summary");
 
-    const { structured, explanation } = result;
+    const { structured, explanation, structuredExplanation } = result;
 
     const handleCopy = async (text: string) => {
         await navigator.clipboard.writeText(text);
@@ -41,8 +44,20 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
     };
 
     const copyExplanation = () => {
-        const patientName = structured.patientInfo?.name ? `Paciente: ${structured.patientInfo.name}\n\n` : "";
-        const textToCopy = `${patientName}${explanation}`;
+        let textToCopy = "";
+
+        if (structured.patientInfo?.name) {
+            textToCopy += `Paciente: ${structured.patientInfo.name}\n\n`;
+        }
+
+        if (structuredExplanation && structuredExplanation.length > 0) {
+            textToCopy += structuredExplanation.map(section =>
+                `${section.title}\n${section.subtitle ? section.subtitle + '\n' : ''}${section.content}`
+            ).join('\n\n');
+        } else {
+            textToCopy += explanation;
+        }
+
         handleCopy(textToCopy);
     };
 
@@ -189,12 +204,44 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
                 </TabsContent>
 
                 {/* --- TAB: INSIGHTS & RECOMENDAÇÕES --- */}
-                <TabsContent value="insights" className="space-y-6">
+                <TabsContent value="insights" className="space-y-8">
+
+                    {/* Intro Text */}
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex items-start gap-3">
+                        <Info className="w-5 h-5 text-slate-500 mt-0.5 shrink-0" />
+                        <p className="text-sm text-slate-600">
+                            Os insights desta seção foram calculados com base nos dados do exame de bioimpedância.
+                        </p>
+                    </div>
+
+                    {/* Advanced Indicators */}
+                    {structured.insights && structured.insights.length > 0 && (
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-slate-700" />
+                                Indicadores Avançados
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {structured.insights.map((insight, index) => (
+                                    <CardMetric
+                                        key={index}
+                                        title={insight.name}
+                                        value={insight.value}
+                                        unit="" // Value already includes unit in string
+                                        description={insight.status}
+                                        icon={<Activity className="w-5 h-5 text-slate-700" />}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Recommendations */}
                     <Card className="rounded-xl border-slate-200">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-slate-800">
                                 <Lightbulb className="w-6 h-6 text-yellow-500" />
-                                Recomendações Personalizadas
+                                Recomendações Práticas
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -248,6 +295,16 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
 
                 {/* --- TAB: EXPLICAÇÃO --- */}
                 <TabsContent value="explanation" className="space-y-6">
+
+                    {/* Disclaimer Alert */}
+                    <Alert variant="default" className="bg-amber-50 border-amber-200 text-amber-900">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <AlertTitle className="text-amber-800 font-semibold">Aviso Importante</AlertTitle>
+                        <AlertDescription className="text-amber-700">
+                            Esta explicação foi gerada com o apoio de inteligência artificial e <strong>não substitui</strong> a avaliação de um médico, nutricionista ou outro profissional de saúde. Use estas informações apenas como material complementar e consulte sempre um profissional antes de tomar decisões.
+                        </AlertDescription>
+                    </Alert>
+
                     <div className="flex justify-end">
                         <Button variant="outline" onClick={copyExplanation} className="mb-2">
                             {copiedText ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
@@ -269,17 +326,35 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
                                     </div>
                                 )}
 
-                                <div className="whitespace-pre-wrap text-slate-700 leading-relaxed space-y-4">
-                                    {explanation.split('\n').map((line, i) => {
-                                        // Simple heuristic to bold lines that look like titles (short, ends with colon or no punctuation but capitalized)
-                                        const isTitle = line.trim().length > 0 && line.trim().length < 60 && (line.trim().endsWith(':') || /^[A-ZÀ-Ú]/.test(line.trim())) && !line.includes('.');
-
-                                        if (isTitle) {
-                                            return <h4 key={i} className="text-lg font-semibold text-slate-900 mt-6 mb-2">{line}</h4>;
-                                        }
-                                        return <p key={i} className="mb-2">{line}</p>;
-                                    })}
-                                </div>
+                                {/* Structured Explanation Blocks */}
+                                {structuredExplanation && structuredExplanation.length > 0 ? (
+                                    <div className="space-y-8">
+                                        {structuredExplanation.map((section, index) => (
+                                            <div key={index} className="border-b border-slate-100 last:border-0 pb-6 last:pb-0">
+                                                <h4 className="text-lg font-bold text-slate-900 mb-1">{section.title}</h4>
+                                                {section.subtitle && (
+                                                    <p className="text-sm font-semibold text-primary mb-3 uppercase tracking-wide">
+                                                        {section.subtitle}
+                                                    </p>
+                                                )}
+                                                <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">
+                                                    {section.content}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    /* Fallback to legacy text explanation */
+                                    <div className="whitespace-pre-wrap text-slate-700 leading-relaxed space-y-4">
+                                        {explanation.split('\n').map((line, i) => {
+                                            const isTitle = line.trim().length > 0 && line.trim().length < 60 && (line.trim().endsWith(':') || /^[A-ZÀ-Ú]/.test(line.trim())) && !line.includes('.');
+                                            if (isTitle) {
+                                                return <h4 key={i} className="text-lg font-semibold text-slate-900 mt-6 mb-2">{line}</h4>;
+                                            }
+                                            return <p key={i} className="mb-2">{line}</p>;
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </Card>

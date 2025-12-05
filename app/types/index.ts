@@ -1,3 +1,16 @@
+export interface InsightMetric {
+    name: string;
+    value: string | number;
+    description: string;
+    status: "abaixo" | "ideal" | "acima" | "alerta" | "neutro";
+}
+
+export interface ExplanationSection {
+    title: string;
+    subtitle?: string;
+    content: string;
+}
+
 export interface BioimpedanceData {
     patientInfo?: {
         name?: string;
@@ -33,10 +46,12 @@ export interface BioimpedanceData {
         professional?: string;
         procedures?: string;
     };
+    insights?: InsightMetric[];
 }
 
 export interface AnalysisResult {
     structured: BioimpedanceData;
     explanation: string;
+    structuredExplanation?: ExplanationSection[];
     rawJson: Record<string, unknown>;
 }
