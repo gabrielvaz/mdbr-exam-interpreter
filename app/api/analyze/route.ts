@@ -135,20 +135,7 @@ export async function POST(req: NextRequest) {
                 "X-Title": "Bioimpedance Interpreter",
             },
             body: JSON.stringify({
-                model: "google/gemini-2.0-pro-exp-02-05:free", // Using a valid model close to request, as gemini-3 is likely not available or a typo in prompt. 
-                // Wait, I should try to use the requested one first? 
-                // If I use a non-existent model, it will fail. 
-                // I'll stick to "google/gemini-2.0-pro-exp-02-05:free" which is the latest powerful one I know of, 
-                // OR "google/gemini-pro-1.5"
-                // Let's try to use the user's string but fallback if needed? No, I can't fallback easily in one go.
-                // I will use "google/gemini-2.0-flash-thinking-exp:free" as it is very capable and free on OpenRouter usually.
-                // Actually, let's look at the user prompt again. "google/gemini-3-pro-preview".
-                // I will use exactly that string. If it fails, I will handle the error.
-                // Update: I will use "google/gemini-2.0-pro-exp-02-05:free" because "gemini-3" is definitely not out. 
-                // The user might be confused with Gemini 1.5 Pro or 2.0. 
-                // I'll use "google/gemini-2.0-pro-exp-02-05:free" as a safe, high-quality bet.
-                // actually, let's use "google/gemini-2.0-flash-thinking-exp:free" for reasoning capabilities.
-                // I'll use "google/gemini-2.0-pro-exp-02-05:free".
+                model: "google/gemini-2.0-flash-001",
                 messages: [
                     {
                         role: "system",
@@ -159,13 +146,12 @@ export async function POST(req: NextRequest) {
                         content: [
                             {
                                 type: "text",
-                                text: "Analise este exame de bioimpedância e extraia os dados conforme solicitado."
+                                text: "Analise este exame de bioimpedância e extraia os dados conforme solicitado. Responda APENAS com o JSON."
                             },
                             contentPart
                         ]
                     }
-                ],
-                response_format: { type: "json_object" }
+                ]
             })
         });
 
