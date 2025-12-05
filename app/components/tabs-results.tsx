@@ -18,7 +18,8 @@ import {
     Star,
     Bone,
     Flame,
-    Clock
+    Clock,
+    Lightbulb
 } from "lucide-react";
 import { useState } from "react";
 
@@ -56,8 +57,9 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
             </div>
 
             <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsList className="grid w-full grid-cols-3 mb-8">
                     <TabsTrigger value="summary">Resumo Estruturado</TabsTrigger>
+                    <TabsTrigger value="insights">Insights & Recomendações</TabsTrigger>
                     <TabsTrigger value="explanation">Explicação para o Paciente</TabsTrigger>
                 </TabsList>
 
@@ -186,6 +188,64 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
                     <ChartsSection data={structured} />
                 </TabsContent>
 
+                {/* --- TAB: INSIGHTS & RECOMENDAÇÕES --- */}
+                <TabsContent value="insights" className="space-y-6">
+                    <Card className="rounded-xl border-slate-200">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-slate-800">
+                                <Lightbulb className="w-6 h-6 text-yellow-500" />
+                                Recomendações Personalizadas
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {structured.recommendations ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {Object.entries(structured.recommendations).map(([key, value]) => {
+                                        if (!value) return null;
+                                        const labels: Record<string, string> = {
+                                            diet: "Dieta & Nutrição",
+                                            exercise: "Atividade Física",
+                                            hydration: "Hidratação",
+                                            sleep: "Sono & Recuperação",
+                                            professional: "Acompanhamento Profissional",
+                                            procedures: "Procedimentos Estéticos"
+                                        };
+
+                                        // Icons mapping
+                                        const icons: Record<string, React.ReactNode> = {
+                                            diet: <Scale className="w-4 h-4" />,
+                                            exercise: <Dumbbell className="w-4 h-4" />,
+                                            hydration: <Droplets className="w-4 h-4" />,
+                                            sleep: <Clock className="w-4 h-4" />,
+                                            professional: <User className="w-4 h-4" />,
+                                            procedures: <Activity className="w-4 h-4" />
+                                        };
+
+                                        return (
+                                            <div key={key} className="space-y-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors">
+                                                <h5 className="font-semibold text-slate-900 flex items-center gap-2 text-lg">
+                                                    <span className="p-1.5 bg-white rounded-md shadow-sm text-slate-700">
+                                                        {icons[key] || <Lightbulb className="w-4 h-4" />}
+                                                    </span>
+                                                    {labels[key] || key}
+                                                </h5>
+                                                <p className="text-slate-600 text-sm leading-relaxed">
+                                                    {value}
+                                                </p>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-slate-500">
+                                    <Lightbulb className="w-12 h-12 mx-auto mb-4 text-slate-300" />
+                                    <p>Nenhuma recomendação específica gerada para este exame.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
                 {/* --- TAB: EXPLICAÇÃO --- */}
                 <TabsContent value="explanation" className="space-y-6">
                     <div className="flex justify-end">
@@ -220,36 +280,6 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
                                         return <p key={i} className="mb-2">{line}</p>;
                                     })}
                                 </div>
-
-                                {/* Recommendations Section moved here */}
-                                {structured.recommendations && (
-                                    <div className="mt-8 pt-8 border-t border-slate-100">
-                                        <h3 className="text-xl font-bold text-slate-900 mb-6">Recomendações Práticas</h3>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            {Object.entries(structured.recommendations).map(([key, value]) => {
-                                                if (!value) return null;
-                                                const labels: Record<string, string> = {
-                                                    diet: "Dieta",
-                                                    exercise: "Exercício",
-                                                    hydration: "Hidratação",
-                                                    sleep: "Sono",
-                                                    professional: "Profissional",
-                                                    procedures: "Procedimentos"
-                                                };
-                                                return (
-                                                    <div key={key} className="space-y-2">
-                                                        <h5 className="font-semibold text-slate-900 flex items-center gap-2">
-                                                            {labels[key] || key}
-                                                        </h5>
-                                                        <p className="text-slate-600 text-sm leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                                                            {value}
-                                                        </p>
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </Card>
