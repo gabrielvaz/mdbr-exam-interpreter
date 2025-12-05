@@ -4,7 +4,6 @@ import { AnalysisResult } from "@/app/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { CardMetric } from "./card-metric";
 import { ChartsSection } from "./charts-section";
 import {
@@ -30,30 +29,20 @@ interface TabsResultsProps {
 
 export function TabsResults({ result, onReset }: TabsResultsProps) {
     const [copiedText, setCopiedText] = useState(false);
-    const [copiedJson, setCopiedJson] = useState(false);
     const [activeTab, setActiveTab] = useState("summary");
 
-    const { structured, explanation, rawJson } = result;
+    const { structured, explanation } = result;
 
-    const handleCopy = async (text: string, isJson: boolean) => {
+    const handleCopy = async (text: string) => {
         await navigator.clipboard.writeText(text);
-        if (isJson) {
-            setCopiedJson(true);
-            setTimeout(() => setCopiedJson(false), 2000);
-        } else {
-            setCopiedText(true);
-            setTimeout(() => setCopiedText(false), 2000);
-        }
+        setCopiedText(true);
+        setTimeout(() => setCopiedText(false), 2000);
     };
 
     const copyExplanation = () => {
         const patientName = structured.patientInfo?.name ? `Paciente: ${structured.patientInfo.name}\n\n` : "";
         const textToCopy = `${patientName}${explanation}`;
-        handleCopy(textToCopy, false);
-    };
-
-    const copyJson = () => {
-        handleCopy(JSON.stringify(rawJson, null, 2), true);
+        handleCopy(textToCopy);
     };
 
     return (
@@ -67,10 +56,9 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
             </div>
 
             <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-8">
+                <TabsList className="grid w-full grid-cols-2 mb-8">
                     <TabsTrigger value="summary">Resumo Estruturado</TabsTrigger>
                     <TabsTrigger value="explanation">Explicação para o Paciente</TabsTrigger>
-                    <TabsTrigger value="json">JSON Estruturado</TabsTrigger>
                 </TabsList>
 
                 {/* --- TAB: RESUMO --- */}
@@ -208,7 +196,7 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
                     </div>
 
                     <Card className="rounded-xl border-slate-200">
-                        <ScrollArea className="h-[600px] w-full rounded-md p-8">
+                        <div className="p-8">
                             <div className="prose prose-slate max-w-none">
                                 {/* Patient Header in Explanation */}
                                 {structured.patientInfo?.name && (
@@ -263,24 +251,7 @@ export function TabsResults({ result, onReset }: TabsResultsProps) {
                                     </div>
                                 )}
                             </div>
-                        </ScrollArea>
-                    </Card>
-                </TabsContent>
-
-                {/* --- TAB: JSON --- */}
-                <TabsContent value="json" className="space-y-4">
-                    <div className="flex justify-end">
-                        <Button variant="outline" onClick={copyJson} className="mb-2">
-                            {copiedJson ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                            Copiar JSON
-                        </Button>
-                    </div>
-                    <Card className="rounded-xl bg-slate-950 text-slate-50">
-                        <ScrollArea className="h-[600px] w-full rounded-md p-6">
-                            <pre className="font-mono text-xs">
-                                {JSON.stringify(rawJson, null, 2)}
-                            </pre>
-                        </ScrollArea>
+                        </div>
                     </Card>
                 </TabsContent>
             </Tabs>
